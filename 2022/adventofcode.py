@@ -2,6 +2,7 @@ import argparse
 
 import days.day1 as day1
 import days.day2 as day2
+import days.day3 as day3
 
 def get_arguments(numberOfDays: int):
     parser = argparse.ArgumentParser()
@@ -16,7 +17,8 @@ def get_arguments(numberOfDays: int):
 def main() -> None:
     days = [
         day1.run,
-        day2.run
+        day2.run,
+        day3.run
     ]
 
     args = get_arguments(len(days))
