@@ -11,3 +11,10 @@ def sum(iter: Iterator[int]) -> int:
         sum += item
 
     return sum
+
+def count_true(iter: Iterator[bool]) -> int:
+    counter: int = 0
+    for item in iter:
+        counter += int(item)
+
+    return counter

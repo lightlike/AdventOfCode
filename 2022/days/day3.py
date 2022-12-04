@@ -1,5 +1,4 @@
 from typing import Iterator
-from enum import Enum, unique
 
 from . import helper
 
