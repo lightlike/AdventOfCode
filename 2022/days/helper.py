@@ -3,7 +3,7 @@ from typing import Iterator
 def load_file(filename: str) -> Iterator[str]:
     with open(filename, "r") as txt_file:
         for line in txt_file:
-            yield line.strip()
+            yield line.replace('\n', '')
 
 def sum(iter: Iterator[int]) -> int:
     sum: int = 0
