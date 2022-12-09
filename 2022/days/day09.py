@@ -80,6 +80,7 @@ def run():
 
     for item in steps:
         result.add(item[1])
+        #print(item)
 
     print(f"Number of T positions: {len(result)}")
 
