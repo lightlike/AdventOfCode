@@ -43,7 +43,7 @@ def do_all_clocks(input: Iterator[Clock]) -> Iterator[int]:
             yield x
             x = item.do_clock(x)
 
-    
+
 
 
 def run():
