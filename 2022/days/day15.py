@@ -38,6 +38,12 @@ class Vector2D:
     def __hash__(self: Vector2D) -> int:
         return hash((self.x, self.y))
 
+    def __eq__(self: Vector2D, other: Vector2D) -> bool:
+        if isinstance(other, self.__class__):
+            return self.x == other.x and self.y == other.x
+        else:
+            return False
+
 
 @dataclass
 class Graph:
@@ -86,11 +92,8 @@ class Graph:
 
     @staticmethod
     def is_relevant(sensor: Vector2D, diff: Vector2D, target_y: int):
-        if ((sensor.y <= target_y and sensor.y + diff.manhattan_distance() >= target_y)
-                or (sensor.y >= target_y and sensor.y - diff.manhattan_distance() <= target_y)):
-            return True
-        else:
-            return False
+        y_offset = abs(target_y - sensor.y)
+        return y_offset <= diff.manhattan_distance()
 
     def find_blocked_in_row(self: Graph, row: int, remove_beacons: bool = True) -> set[Vector2D]:
         result: list[Vector2D] = []
@@ -111,33 +114,24 @@ class Graph:
 
         return set(result)
 
-    def generate_blocked_fields(self: Graph, p_min: Vector2D = Vector2D(-math.inf, -math.inf), p_max: Vector2D = Vector2D(math.inf, math.inf)) -> dict[Vector2D, Block]:
-        result: dict[Vector2D, Block] = {}
+    def get_row_blocked(self: Graph, row: int) -> dict[int: int]:
+        result: list = []
         for sensor, beacon, diff in self.sensors:
+            offset = abs(row - sensor.y)
             dist = diff.manhattan_distance()
-            
-            for x in range(max(sensor.x - dist, p_min.x), min(sensor.x + dist, p_max.x) + 1):
-                bias = 1 if sensor.x < x else -1
-                number_of_points = abs(sensor.x + (dist * bias) - x) * 2 + 1
-                radius = int(number_of_points / 2)
 
-                for y in range(max(sensor.y - radius, p_min.y), min(sensor.y + radius, p_max.y) + 1):
-                    result[Vector2D(x, y)] = Block.nothing
-            
-            for y in range(max(sensor.y - dist, p_min.y), min(sensor.y + dist, p_max.y) + 1):
-                bias = 1 if sensor.y < y else -1
-                number_of_points = abs(sensor.y + (dist * bias) - y) * 2 + 1
-                radius = int(number_of_points / 2)
-
-                for x in range(max(sensor.x - radius, p_min.x), min(sensor.x + radius, p_max.x) + 1):
-                    result[Vector2D(x, y)] = Block.nothing
-
-        for sensor, beacon, diff in self.sensors:
-            result[sensor] = Block.sensor
-            result[beacon] = Block.beacon
-
+            if offset <= dist:
+                result.append((sensor.x - (dist - offset), sensor.x + (dist - offset)))
+        
         return result
 
+    def get_free_by_row(self: Graph, p_min: Vector2D, p_max: Vector2D) -> Iterator[int, list]:
+        for y in range(p_min.y, p_max.y + 1):
+            row_intervals = self.get_row_blocked(y)
+            row_intervals = merge_intervals([(p_min.x, p_min.y)] + row_intervals + [(p_max.x, p_max.y)])
+
+            if len(row_intervals) > 1:
+                yield y, row_intervals
 
 def parse_input(file: Iterator[str]) -> Graph:
     graph = Graph()
@@ -149,6 +143,28 @@ def parse_input(file: Iterator[str]) -> Graph:
 
     return graph
 
+def is_touching(a: tuple[int, int], b: tuple[int, int]):
+    if b[0] >= a[0] and b[0] <= a[1] + 1:
+        return True
+    else:
+        return False
+
+def merge_intervals(intervals: list[tuple[int, int]]):
+    intervals.sort()
+    result = [intervals[0]]
+    for i in range(1, len(intervals)):
+        last = result.pop()
+        #current = intervals[i]
+
+        if is_touching(last, intervals[i]):
+            new_element = last[0], max(last[1], intervals[i][1])
+            result.append(new_element)
+        else:
+            result.append(last)
+            result.append(intervals[i])
+
+    return result
+
 
 def run():
     # Round 1
@@ -158,25 +174,20 @@ def run():
 
     graph = parse_input(file)
 
-    #result = graph.find_blocked_in_row(2000000)
-    #print(f"Number of blocked spaces: {len(result)}")
+    result = graph.find_blocked_in_row(2000000)
+    print(f"Number of blocked spaces: {len(result)}")
     
     # Round 2
     print("Round 2:")
 
     p_min = Vector2D(0, 0)
+    #p_max = Vector2D(20, 20)
     p_max = Vector2D(4000000, 4000000)
 
-    result = graph.generate_blocked_fields(p_min, p_max)
-    item = find_free(result, p_min.x, p_min.y, p_max.x, p_max.y)
-    print(item)
-    score = item.x * 4000000 + item.y
-    #print(f"Free position in area: {result}")
-    print(f"Score: {score}")
+    results = graph.get_free_by_row(p_min, p_max)
 
-def find_free(items: dict, x_min: int, y_min: int, x_max: int, y_max: int):
-    for x in range(x_min, x_max):
-        for y in range(y_min, y_max):
-            item = items.get(Vector2D(x, y), None)
-            if item == None:
-                return Vector2D(x, y)
+    for item in results:
+        vector = Vector2D(item[1][0][1] + 1, item[0])
+        print(vector)
+        score = vector.x * 4000000 + vector.y
+        print(f"Score: {score}")
