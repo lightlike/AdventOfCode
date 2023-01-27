@@ -40,7 +40,7 @@ class Vector2D:
 
     def __eq__(self: Vector2D, other: Vector2D) -> bool:
         if isinstance(other, self.__class__):
-            return self.x == other.x and self.y == other.x
+            return self.x == other.x and self.y == other.y
         else:
             return False
 
